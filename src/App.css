@@ -251,7 +251,9 @@ tr {
     }
 }
 
-#select-file {
+#select-file,
+#download-valid,
+#download-invalid {
     display: none;
 }
 

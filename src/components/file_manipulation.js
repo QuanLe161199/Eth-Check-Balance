@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import readXlsxFile from "read-excel-file";
 import writeXlsxFile from "write-excel-file";
+import Papa from "papaparse";
+import { CSVLink } from "react-csv";
 import Fortmatic from "fortmatic";
 import { ethers } from "ethers";
 
@@ -35,6 +37,9 @@ const FileManipulation = () => {
     const [isLoading, setLoading] = useState(false);
     const [totalAddress, setTotalAddress] = useState(0);
     const [loadIndex, setLoadIndex] = useState(0);
+
+    // use to recognize read file
+    const [fileType, setFileType] = useState(null);
 
     // when the clients list changes, then change the two display lists
     useEffect(() => {
@@ -80,6 +85,15 @@ const FileManipulation = () => {
             );
 
             // update two files downloading
+            updateDownloadingFiles();
+        } else {
+            setValidAddressFile(null);
+            setInvalidAddressFile(null);
+        }
+    }, [clients]);
+
+    const updateDownloadingFiles = () => {
+        if (fileType === ".xlsx") {
             var validAddressData = [
                 [
                     { type: Number, value: null },
@@ -128,10 +142,31 @@ const FileManipulation = () => {
                 ? setInvalidAddressFile(null)
                 : setInvalidAddressFile(invalidAddressData);
         } else {
-            setValidAddressFile(null);
-            setInvalidAddressFile(null);
+            var validAddressData = [];
+            var invalidAddressData = [];
+
+            var validIndex = 1;
+            var invalidIndex = 1;
+            clients.forEach((client) => {
+                client?.balance === "Invalid address" ||
+                client?.balance < MINIMUM_BALANCE
+                    ? invalidAddressData.push([
+                          (invalidIndex++).toString(),
+                          client?.address,
+                      ])
+                    : validAddressData.push([
+                          (validIndex++).toString(),
+                          client?.address,
+                      ]);
+            });
+            validIndex === 1
+                ? setValidAddressFile(null)
+                : setValidAddressFile(validAddressData);
+            invalidIndex === 1
+                ? setInvalidAddressFile(null)
+                : setInvalidAddressFile(invalidAddressData);
         }
-    }, [clients]);
+    };
 
     // when the two display lists change, then change the two display item lists
     useEffect(() => {
@@ -187,51 +222,105 @@ const FileManipulation = () => {
     };
 
     const importFile = async (e) => {
-        setLoading(true);
+        const file = e.target.files[0];
+        // check if input file is excel or csv
+        if (file.name.match("^(?:(?!~$).)+.(?:xlsx?|csv)$")) {
+            // if input file is an excel file
+            if (file.name.match("^(?:(?!~$).)+.(?:xlsx)$")) {
+                setFileType(".xlsx");
+                setLoading(true);
 
-        var data = [];
+                var data = [];
 
-        var index = 0;
+                var index = 0;
 
-        await readXlsxFile(e.target.files[0]).then(async (rows) => {
-            var nullRows = 0;
-            for (let i = 0; i < rows.length; i++) {
-                if (rows[i][1]) {
-                    break;
-                }
-                nullRows++;
-            }
-            setTotalAddress(rows.length - nullRows);
-        });
-
-        // read the context of the input file
-        await readXlsxFile(e.target.files[0]).then(async (rows) => {
-            for (let i = 0; i < rows.length; i++) {
-                if (rows[i][1]) {
-                    setLoadIndex(index++);
-                    try {
-                        let balance = await getBalance(rows[i][2]);
-                        data.push({
-                            index: rows[i][1],
-                            address: rows[i][2],
-                            balance: balance.toFixed(3),
-                        });
-                    } catch (e) {
-                        data.push({
-                            index: rows[i][1],
-                            address: rows[i][2],
-                            balance: "Invalid address",
-                        });
+                await readXlsxFile(file).then(async (rows) => {
+                    var nullRows = 0;
+                    for (let i = 0; i < rows.length; i++) {
+                        if (rows[i][1]) {
+                            break;
+                        }
+                        nullRows++;
                     }
-                }
+                    setTotalAddress(rows.length - nullRows);
+                });
+
+                // read the context of the input file
+                await readXlsxFile(file).then(async (rows) => {
+                    for (let i = 0; i < rows.length; i++) {
+                        if (rows[i][1]) {
+                            setLoadIndex(index++);
+                            try {
+                                let balance = await getBalance(rows[i][2]);
+                                data.push({
+                                    index: rows[i][1],
+                                    address: rows[i][2],
+                                    balance: balance.toFixed(3),
+                                });
+                            } catch (e) {
+                                data.push({
+                                    index: rows[i][1],
+                                    address: rows[i][2],
+                                    balance: "Invalid address",
+                                });
+                            }
+                        }
+                    }
+
+                    // reset input file
+                    e.target.value = null;
+                    setClients(data);
+                    setPageIndex(1);
+                    setLoading(false);
+                });
             }
 
-            // reset input file
-            e.target.value = null;
-            setClients(data);
-            setPageIndex(1);
-            setLoading(false);
-        });
+            // if input file is a csv file
+            if (file.name.match("^(?:(?!~$).)+.(?:csv)$")) {
+                setFileType(".csv");
+                setLoading(true);
+
+                var data = [];
+
+                var index = 0;
+
+                Papa.parse(e.target.files[0], {
+                    header: false,
+                    skipEmptyLines: true,
+                    complete: async (results) => {
+                        const rows = results.data;
+                        setTotalAddress(rows.length);
+                        for (let i = 0; i < rows.length; i++) {
+                            if (rows[i][0]) {
+                                setLoadIndex(index++);
+                                try {
+                                    let balance = await getBalance(rows[i][1]);
+                                    data.push({
+                                        index: rows[i][0],
+                                        address: rows[i][1],
+                                        balance: balance.toFixed(3),
+                                    });
+                                } catch (e) {
+                                    data.push({
+                                        index: rows[i][0],
+                                        address: rows[i][1],
+                                        balance: "Invalid address",
+                                    });
+                                }
+                            }
+                        }
+
+                        // reset input file
+                        e.target.value = null;
+                        setClients(data);
+                        setPageIndex(1);
+                        setLoading(false);
+                    },
+                });
+            }
+        } else {
+            //notification;
+        }
     };
 
     const switchPageIncludeInvalidAddress = () => {
@@ -258,6 +347,16 @@ const FileManipulation = () => {
 
     return (
         <div className="file-manipulation">
+            {validAddressFile && (
+                <CSVLink id="download-valid" data={validAddressFile}>
+                    Download me
+                </CSVLink>
+            )}
+            {invalidAddressFile && (
+                <CSVLink id="download-invalid" data={invalidAddressFile}>
+                    Download me
+                </CSVLink>
+            )}
             {!clients && isLoading && (
                 <button className="select-file-btn-1 cursor-no-drop">
                     <div className="loader-1"></div>
@@ -298,9 +397,13 @@ const FileManipulation = () => {
                     <button
                         className="download-file-btn"
                         onClick={() => {
-                            writeXlsxFile(invalidAddressFile, {
-                                fileName: "invalid-addresses.xlsx",
-                            });
+                            fileType === ".xlsx"
+                                ? writeXlsxFile(invalidAddressFile, {
+                                      fileName: "invalid-addresses.xlsx",
+                                  })
+                                : document
+                                      .getElementById("download-invalid")
+                                      .click();
                         }}
                     >
                         <i className="fa fa-icon-2">&#xf063;</i>
@@ -311,9 +414,13 @@ const FileManipulation = () => {
                     <button
                         className="download-file-btn"
                         onClick={() => {
-                            writeXlsxFile(validAddressFile, {
-                                fileName: "valid-addresses.xlsx",
-                            });
+                            fileType === ".xlsx"
+                                ? writeXlsxFile(validAddressFile, {
+                                      fileName: "valid-addresses.xlsx",
+                                  })
+                                : document
+                                      .getElementById("download-valid")
+                                      .click();
                         }}
                     >
                         <i className="fa fa-icon-2">&#xf063;</i>
