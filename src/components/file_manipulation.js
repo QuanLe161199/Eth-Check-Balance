@@ -348,12 +348,20 @@ const FileManipulation = () => {
     return (
         <div className="file-manipulation">
             {validAddressFile && (
-                <CSVLink id="download-valid" data={validAddressFile}>
+                <CSVLink
+                    id="download-valid"
+                    filename="invalid-addresses.csv"
+                    data={validAddressFile}
+                >
                     Download me
                 </CSVLink>
             )}
             {invalidAddressFile && (
-                <CSVLink id="download-invalid" data={invalidAddressFile}>
+                <CSVLink
+                    id="download-invalid"
+                    filename="valid-addresses.csv"
+                    data={invalidAddressFile}
+                >
                     Download me
                 </CSVLink>
             )}
