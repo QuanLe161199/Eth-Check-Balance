@@ -350,7 +350,7 @@ const FileManipulation = () => {
             {validAddressFile && (
                 <CSVLink
                     id="download-valid"
-                    filename="invalid-addresses.csv"
+                    filename="valid-addresses.csv"
                     data={validAddressFile}
                 >
                     Download me
@@ -359,7 +359,7 @@ const FileManipulation = () => {
             {invalidAddressFile && (
                 <CSVLink
                     id="download-invalid"
-                    filename="valid-addresses.csv"
+                    filename="invalid-addresses.csv"
                     data={invalidAddressFile}
                 >
                     Download me
