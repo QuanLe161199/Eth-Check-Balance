@@ -218,9 +218,8 @@ const FileManipulation = () => {
 
     //get ethereum balance by public address
     const getBalance = async (address) => {
-        // var rawBalance = await provider.getBalance(address);
-        // return parseFloat(ethers.utils.formatEther(rawBalance));
-        return Math.random(1);
+        var rawBalance = await provider.getBalance(address);
+        return parseFloat(ethers.utils.formatEther(rawBalance));
     };
 
     const importFile = async (e) => {
