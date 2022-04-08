@@ -218,8 +218,9 @@ const FileManipulation = () => {
 
     //get ethereum balance by public address
     const getBalance = async (address) => {
-        var rawBalance = await provider.getBalance(address);
-        return parseFloat(ethers.utils.formatEther(rawBalance));
+        // var rawBalance = await provider.getBalance(address);
+        // return parseFloat(ethers.utils.formatEther(rawBalance));
+        return Math.random(1);
     };
 
     const importFile = async (e) => {
@@ -347,13 +348,34 @@ const FileManipulation = () => {
         }
     };
 
+    const changeMinimumBalance = (e) => {
+        try {
+            var newMinimumBalance = parseFloat(e.target.value);
+            console.log("ha", newMinimumBalance);
+            newMinimumBalance <= 0
+                ? setMinimumBalance(0.25)
+                : setMinimumBalance(newMinimumBalance);
+            updateDownloadingFiles();
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
+    useEffect(() => {
+        console.log("hi", minimumBalance);
+    }, [minimumBalance]);
+
     return (
         <div className="file-manipulation">
-            <input
-                onChange={(e) => {
-                    setMinimumBalance(e.target.value.parseInt);
-                }}
-            ></input>
+            {clients && (
+                <div className="balance">
+                    <div className="balance-text">Minimum Balance</div>
+                    <input
+                        className="balance-input"
+                        onChange={changeMinimumBalance}
+                    ></input>
+                </div>
+            )}
             {validAddressFile && (
                 <CSVLink
                     id="download-valid"

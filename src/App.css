@@ -257,6 +257,23 @@ tr {
     display: none;
 }
 
+.balance {
+    margin: auto;
+    width: fit-content;
+}
+
+.balance-text {
+    float: left;
+    margin: 0px 5px 0px 5px;
+    font-weight: bold;
+}
+
+.balance-input {
+    margin: 0px 5px 0px 5px;
+    width: 50px;
+    border-radius: 5px;
+}
+
 /* Style each columns*/
 .column-index {
     /* Display & Box Model */
