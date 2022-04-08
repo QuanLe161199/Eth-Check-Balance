@@ -6,8 +6,6 @@ import { CSVLink } from "react-csv";
 import Fortmatic from "fortmatic";
 import { ethers } from "ethers";
 
-const MINIMUM_BALANCE = 0.25;
-
 const fm = new Fortmatic("pk_live_2E5F208FF8CB3A21", "mainnet"); // create a Fortmatic project to get API key
 const provider = new ethers.providers.Web3Provider(fm.getProvider());
 
@@ -41,6 +39,9 @@ const FileManipulation = () => {
     // use to recognize read file
     const [fileType, setFileType] = useState(null);
 
+    // minimum balance
+    const [minimumBalance, setMinimumBalance] = useState(0.25);
+
     // when the clients list changes, then change the two display lists
     useEffect(() => {
         if (clients) {
@@ -60,7 +61,7 @@ const FileManipulation = () => {
                 dataRight.push({
                     index: i,
                     address: "",
-                    balance: MINIMUM_BALANCE,
+                    balance: minimumBalance,
                 });
                 i++;
             }
@@ -79,7 +80,7 @@ const FileManipulation = () => {
             setInvalidAddresses(
                 clients.filter(
                     (client) =>
-                        client?.balance < MINIMUM_BALANCE ||
+                        client?.balance < minimumBalance ||
                         client?.balance === "Invalid address"
                 )
             );
@@ -123,7 +124,7 @@ const FileManipulation = () => {
             var invalidIndex = 1;
             clients.forEach((client) => {
                 client?.balance === "Invalid address" ||
-                client?.balance < MINIMUM_BALANCE
+                client?.balance < minimumBalance
                     ? invalidAddressData.push([
                           { type: Number, value: null },
                           { type: Number, value: invalidIndex++ },
@@ -149,7 +150,7 @@ const FileManipulation = () => {
             var invalidIndex = 1;
             clients.forEach((client) => {
                 client?.balance === "Invalid address" ||
-                client?.balance < MINIMUM_BALANCE
+                client?.balance < minimumBalance
                     ? invalidAddressData.push([
                           (invalidIndex++).toString(),
                           client?.address,
@@ -235,6 +236,7 @@ const FileManipulation = () => {
                 var index = 0;
 
                 await readXlsxFile(file).then(async (rows) => {
+                    console.log(rows);
                     var nullRows = 0;
                     for (let i = 0; i < rows.length; i++) {
                         if (rows[i][1]) {
@@ -347,6 +349,11 @@ const FileManipulation = () => {
 
     return (
         <div className="file-manipulation">
+            <input
+                onChange={(e) => {
+                    setMinimumBalance(e.target.value.parseInt);
+                }}
+            ></input>
             {validAddressFile && (
                 <CSVLink
                     id="download-valid"
@@ -401,6 +408,7 @@ const FileManipulation = () => {
                         Select File
                     </button>
                 )}
+
                 {invalidAddressFile && (
                     <button
                         className="download-file-btn"
@@ -453,7 +461,7 @@ const FileManipulation = () => {
                                             key={client?.index}
                                             className={
                                                 client?.balance <
-                                                    MINIMUM_BALANCE ||
+                                                    minimumBalance ||
                                                 client?.balance ===
                                                     "Invalid address"
                                                     ? "danger"
@@ -491,7 +499,7 @@ const FileManipulation = () => {
                                             key={client?.index}
                                             className={
                                                 client?.balance <
-                                                    MINIMUM_BALANCE ||
+                                                    minimumBalance ||
                                                 client?.balance ===
                                                     "Invalid address"
                                                     ? "danger"
